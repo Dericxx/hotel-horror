@@ -2,119 +2,236 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#08090d">
-<meta name="description" content="Explore um hotel assustador e sobreviva às entidades.">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#090b0d">
 <link rel="manifest" href="./manifest.json">
 <title>Hotel 13</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#08090d;color:#eee;font-family:Arial,sans-serif;text-align:center}
-header{padding:15px;background:#11131b;border-bottom:1px solid #39323b}
-h1{margin:0;color:#d64b55;letter-spacing:4px}
-header p{color:#aaa;font-size:13px}
-#scene{height:48vh;min-height:260px;max-height:430px;position:relative;overflow:hidden;background:radial-gradient(ellipse,#45404a 0%,#17171e 48%,#050609 100%)}
-.wall{position:absolute;inset:0;background:linear-gradient(90deg,#090a0e,#35323a 50%,#090a0e);clip-path:polygon(0 0,100% 0,72% 100%,28% 100%)}
-.floor{position:absolute;inset:48% 0 0;background:repeating-linear-gradient(90deg,transparent 0 39px,#ffffff0b 40px 41px),linear-gradient(#25232a,#08090c);clip-path:polygon(28% 0,72% 0,100% 100%,0 100%)}
-.door{position:absolute;top:17%;bottom:12%;left:37%;width:26%;border:7px solid #171014;background:linear-gradient(90deg,#38252a,#62403b,#291b21);box-shadow:0 0 35px #000,inset 0 0 10px #000}
-.door:after{content:"";position:absolute;right:12%;top:53%;width:9px;height:9px;border-radius:50%;background:#d6a76c}
-#number{position:absolute;top:23%;left:0;right:0;font-size:28px;font-weight:bold;color:#eee;text-shadow:0 0 10px black}
-#entity{display:none;position:absolute;inset:0;align-items:center;justify-content:center;background:#17050ae8;color:#ff263d;font-size:clamp(22px,7vw,40px);font-weight:bold;text-shadow:0 0 18px red;z-index:3}
-#message{min-height:48px;padding:13px 10px;color:#c5c0c7}
-.stats{display:flex;justify-content:center;gap:24px;padding:5px;font-size:14px}
-.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px;max-width:500px;margin:auto}
-button{padding:15px 8px;border:1px solid #55434b;border-radius:8px;background:#211820;color:white;font-size:15px;font-weight:bold}
-button:active{background:#62303a}
+body{margin:0;background:#090b0d;color:white;font-family:Arial;text-align:center;overflow:hidden;touch-action:none}
+header{height:55px;display:flex;align-items:center;justify-content:space-around;background:#141519}
+h2{color:#d94a59;margin:0;letter-spacing:3px}
+#stats{font-size:14px}
+canvas{display:block;width:100%;height:calc(100dvh - 235px);min-height:220px;max-height:600px;background:#17191b;image-rendering:pixelated;touch-action:none}
+#msg{height:32px;padding:7px;font-size:13px;color:#d5cbd0}
+#controls{height:145px;display:flex;align-items:center;justify-content:space-around;gap:8px;padding:5px}
+#pad{display:grid;grid-template-columns:48px 48px 48px;grid-template-rows:42px 42px 42px;gap:3px}
+button{border:1px solid #50454a;background:#25252b;color:white;border-radius:10px;font-size:20px;touch-action:none}
+button:active{background:#77313d}
+.padbtn{font-size:22px}
+.up{grid-column:2;grid-row:1}.left{grid-column:1;grid-row:2}.down{grid-column:2;grid-row:2}.right{grid-column:3;grid-row:2}
+#actions{display:grid;grid-template-columns:repeat(2,minmax(65px,85px));gap:8px}
+.action{height:54px;font-size:12px}
 #restart{display:none}
-footer{padding:10px;color:#777;font-size:12px}
+@media(min-width:650px){canvas{height:calc(100dvh - 190px)}#controls{height:100px}#pad{grid-template-columns:52px 52px 52px;grid-template-rows:32px 32px 32px}}
 </style>
 </head>
 <body>
 <header>
-<h1>HOTEL 13</h1>
-<p>Você não deveria ter entrado aqui...</p>
+<h2>HOTEL 13</h2>
+<div id="stats">❤️ <span id="hp">3</span>　🚪 <span id="room">1</span></div>
 </header>
-<main>
-<div id="scene">
-<div class="wall"></div><div class="floor"></div>
-<div class="door"></div>
-<div id="number">000</div>
-<div id="entity">ELE ESTÁ AQUI!</div>
+<canvas id="game"></canvas>
+<div id="msg">Explore o hotel. Algo está à sua procura...</div>
+<div id="controls">
+<div id="pad">
+<button class="padbtn up" data-dir="up">▲</button>
+<button class="padbtn left" data-dir="left">◀</button>
+<button class="padbtn down" data-dir="down">▼</button>
+<button class="padbtn right" data-dir="right">▶</button>
 </div>
-<div class="stats">
-<span>❤️ Vida: <b id="hp">3</b></span>
-<span>🔦 Lanterna: <b id="light">Ligada</b></span>
+<div id="actions">
+<button class="action" id="interact">🚪 Interagir</button>
+<button class="action" id="flash">🔦 Lanterna</button>
+<button class="action" id="hide">🗄️ Esconder</button>
+<button class="action" id="restart">🔄 Recomeçar</button>
 </div>
-<div id="message">O corredor está silencioso. Abra a porta...</div>
-<div class="controls">
-<button id="open">🚪 Abrir porta</button>
-<button id="hide">🗄️ Esconder</button>
-<button id="flash">🔦 Lanterna</button>
-<button id="restart">🔄 Recomeçar</button>
 </div>
-</main>
-<footer>HOTEL 13 • Sobreviva se conseguir.</footer>
 <script>
-let room=0,hp=3,light=true,threat=false,ended=false;
+const canvas=document.querySelector("#game");
+const ctx=canvas.getContext("2d");
 const $=id=>document.getElementById(id);
-function say(t){$("message").textContent=t}
-function update(){
-$("number").textContent=String(room).padStart(3,"0");
-$("hp").textContent=hp;
-$("light").textContent=light?"Ligada":"Desligada";
-$("entity").style.display=threat?"flex":"none";
-$("flash").textContent=light?"🔦 Desligar lanterna":"🔦 Ligar lanterna";
-$("open").disabled=ended;
-$("hide").disabled=ended;
-$("flash").disabled=ended;
-$("restart").style.display=ended?"block":"none";
+let W=640,H=440,room=1,hp=3,light=true,hidden=false,dead=false;
+let msg="Explore o hotel. Algo está à sua procura...";
+const keys={};
+const player={x:320,y:340,r:10,speed:155};
+const monster={x:320,y:100,r:13,speed:53,active:false};
+let door={x:320,y:40,w:72,h:24};
+let walls=[],closet={x:65,y:90,w:48,h:55};
+let last=0,invuln=0;
+
+function say(t){msg=t;$("msg").textContent=t}
+function setup(){
+walls=[
+{x:0,y:0,w:W,h:20},{x:0,y:H-20,w:W,h:20},
+{x:0,y:0,w:20,h:H},{x:W-20,y:0,w:20,h:H},
+{x:120,y:100,w:20,h:180},
+{x:120,y:100,w:145,h:20},
+{x:400,y:190,w:20,h:150},
+{x:400,y:190,w:120,h:20}
+];
+door={x:W/2-36,y:20,w:72,h:24};
+closet={x:55,y:70,w:48,h:55};
 }
-$("open").onclick=()=>{
-if(ended)return;
-if(threat){hp--;threat=false;
-if(hp<=0){hp=0;ended=true;say("Você foi encontrado. Fim de jogo.");}
-else say("Você abriu a porta na hora errada! Perdeu uma vida.");
-}else{
+function resize(){
+const r=canvas.getBoundingClientRect();
+const d=Math.min(window.devicePixelRatio||1,2);
+canvas.width=Math.round(r.width*d);
+canvas.height=Math.round(r.height*d);
+W=640;H=440;
+setup();draw();
+}
+window.addEventListener("resize",resize);
+
+function circleRect(x,y,r,b){
+const cx=Math.max(b.x,Math.min(x,b.x+b.w));
+const cy=Math.max(b.y,Math.min(y,b.y+b.h));
+return (x-cx)**2+(y-cy)**2<r*r;
+}
+function blocked(x,y){
+if(walls.some(b=>circleRect(x,y,player.r,b)))return true;
+if(circleRect(x,y,player.r,closet))return true;
+return false;
+}
+function move(dx,dy){
+if(hidden||dead)return;
+if(!blocked(player.x+dx,player.y))player.x+=dx;
+if(!blocked(player.x,player.y+dy))player.y+=dy;
+}
+function interact(){
+if(dead)return;
+const d=Math.hypot(player.x-(door.x+door.w/2),player.y-door.y);
+if(d<55){
 room++;
-if(room%5===0){
-threat=true;
-say("As luzes falharam... ESCONDA-SE AGORA!");
-}else if(Math.random()<0.28){
-threat=true;
-say("Você ouviu passos correndo! Esconda-se!");
+player.x=W/2;player.y=H-55;
+monster.active=room%3===0||Math.random()<.25;
+monster.x=W/2;monster.y=65;
+monster.speed=53+Math.min(room*2,35);
+say(monster.active?"Você ouviu passos! Fuja e procure um esconderijo!":"Sala "+room+". O silêncio é assustador...");
+$("room").textContent=room;
+return;
+}
+if(Math.hypot(player.x-(closet.x+closet.w/2),player.y-(closet.y+closet.h/2))<65){
+say("Você encontrou um armário. Use o botão Esconder.");
+}else say("Chegue perto de uma porta ou de um armário.");
+}
+function hide(){
+if(dead)return;
+if(!hidden&&Math.hypot(player.x-(closet.x+closet.w/2),player.y-(closet.y+closet.h/2))>75){
+say("Chegue perto do armário para se esconder.");return;
+}
+hidden=!hidden;
+if(hidden)say("Você está escondido. Espere o perigo passar.");
+else say("Você saiu do esconderijo.");
+}
+function update(dt){
+if(dead)return;
+let dx=0,dy=0;
+if(keys.up||keys.ArrowUp||keys.w)dy--;
+if(keys.down||keys.ArrowDown||keys.s)dy++;
+if(keys.left||keys.ArrowLeft||keys.a)dx--;
+if(keys.right||keys.ArrowRight||keys.d)dx++;
+if(dx&&dy){dx*=.7071;dy*=.7071}
+move(dx*player.speed*dt,dy*player.speed*dt);
+
+if(monster.active&&!hidden){
+let vx=player.x-monster.x,vy=player.y-monster.y;
+let d=Math.hypot(vx,vy)||1;
+monster.x+=vx/d*monster.speed*dt;
+monster.y+=vy/d*monster.speed*dt;
+if(d<player.r+monster.r+2&&invuln<=0){
+hp--;invuln=1.5;
+$("hp").textContent=hp;
+if(hp<=0){dead=true;say("O monstro te encontrou! Fim de jogo.");$("restart").style.display="block"}
+else say("O monstro te pegou! Você perdeu uma vida.");
+}
+}
+if(invuln>0)invuln-=dt;
+}
+function draw(){
+const sx=canvas.width/W,sy=canvas.height/H;
+ctx.setTransform(sx,0,0,sy,0,0);
+ctx.fillStyle="#17191b";ctx.fillRect(0,0,W,H);
+// piso
+ctx.fillStyle="#29282a";ctx.fillRect(20,20,W-40,H-40);
+ctx.strokeStyle="#393438";ctx.lineWidth=1;
+for(let x=30;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,20);ctx.lineTo(x,H-20);ctx.stroke()}
+for(let y=30;y<H;y+=40){ctx.beginPath();ctx.moveTo(20,y);ctx.lineTo(W-20,y);ctx.stroke()}
+// paredes
+walls.forEach(b=>{ctx.fillStyle="#55464a";ctx.fillRect(b.x,b.y,b.w,b.h)});
+// porta
+ctx.fillStyle="#170f12";ctx.fillRect(door.x-5,door.y-3,door.w+10,door.h+8);
+ctx.fillStyle="#704638";ctx.fillRect(door.x,door.y,door.w,door.h);
+ctx.fillStyle="#f0c078";ctx.fillRect(door.x+door.w-13,door.y+12,4,4);
+ctx.fillStyle="white";ctx.font="12px Arial";ctx.textAlign="center";
+ctx.fillText(String(room+1).padStart(3,"0"),W/2,door.y+16);
+// armário
+ctx.fillStyle="#211719";ctx.fillRect(closet.x,closet.y,closet.w,closet.h);
+ctx.strokeStyle="#99705c";ctx.strokeRect(closet.x,closet.y,closet.w,closet.h);
+ctx.fillStyle="#d5b09a";ctx.fillRect(closet.x+closet.w-10,closet.y+25,3,5);
+// monstro
+if(monster.active){
+ctx.fillStyle="#8d142a";ctx.beginPath();ctx.arc(monster.x,monster.y,monster.r,0,Math.PI*2);ctx.fill();
+ctx.fillStyle="#fff";ctx.fillRect(monster.x-7,monster.y-4,4,4);ctx.fillRect(monster.x+3,monster.y-4,4,4);
+}
+// jogador
+if(!hidden){
+ctx.fillStyle=invuln>0&&Math.floor(invuln*10)%2?"#fff":"#65c9d8";
+ctx.beginPath();ctx.arc(player.x,player.y,player.r,0,Math.PI*2);ctx.fill();
+ctx.fillStyle="#e9f7ff";ctx.beginPath();ctx.arc(player.x+3,player.y-3,3,0,Math.PI*2);ctx.fill();
+}
+// lanterna: escurece tudo e abre um círculo de luz
+if(!light){
+ctx.fillStyle="#000b";ctx.fillRect(0,0,W,H);
 }else{
-say("Sala "+room+". Você escuta ruídos ao longe...");
+ctx.save();
+ctx.fillStyle="#000b";ctx.fillRect(0,0,W,H);
+ctx.globalCompositeOperation="destination-out";
+const g=ctx.createRadialGradient(player.x,player.y,15,player.x,player.y,155);
+g.addColorStop(0,"#fff");g.addColorStop(1,"#000");
+ctx.fillStyle=g;ctx.beginPath();ctx.arc(player.x,player.y,155,0,Math.PI*2);ctx.fill();
+ctx.restore();
+}
+if(dead){
+ctx.fillStyle="#000b";ctx.fillRect(0,0,W,H);
+ctx.fillStyle="#ff4055";ctx.font="bold 30px Arial";
+ctx.fillText("FIM DE JOGO",W/2,H/2);
 }
 }
-update();
-};
-$("hide").onclick=()=>{
-if(ended)return;
-if(threat){
-threat=false;
-say("Você se escondeu a tempo. Os passos foram embora...");
-}else say("Você se escondeu, mas não ouviu nenhum perigo.");
-update();
-};
-$("flash").onclick=()=>{
-if(ended)return;
-light=!light;
-$("scene").style.filter=light?"brightness(1)":"brightness(.35)";
-say(light?"A lanterna ilumina o corredor.":"Tudo ficou muito escuro...");
-update();
-};
+function loop(t){
+let dt=Math.min((t-last)/1000||0,.04);last=t;
+update(dt);draw();requestAnimationFrame(loop);
+}
+document.querySelectorAll("[data-dir]").forEach(b=>{
+const dir=b.dataset.dir;
+const down=e=>{e.preventDefault();keys[dir]=true};
+const up=e=>{e.preventDefault();keys[dir]=false};
+b.addEventListener("pointerdown",down);
+b.addEventListener("pointerup",up);
+b.addEventListener("pointercancel",up);
+b.addEventListener("lostpointercapture",up);
+});
+window.addEventListener("keydown",e=>{
+const k=e.key.length===1?e.key.toLowerCase():e.key;
+keys[k]=true;
+if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key))e.preventDefault();
+});
+window.addEventListener("keyup",e=>{
+keys[e.key.length===1?e.key.toLowerCase():e.key]=false;
+});
+$("interact").onclick=interact;
+$("hide").onclick=hide;
+$("flash").onclick=()=>{light=!light;say(light?"A lanterna está ligada.":"A lanterna está desligada.")};
 $("restart").onclick=()=>{
-room=0;hp=3;light=true;threat=false;ended=false;
-$("scene").style.filter="brightness(1)";
-say("Você voltou ao início. Tente sobreviver!");
-update();
+room=1;hp=3;light=true;hidden=false;dead=false;invuln=0;
+player.x=W/2;player.y=H-55;monster.active=false;
+$("hp").textContent=hp;$("room").textContent=room;
+$("restart").style.display="none";say("Explore o hotel. Algo está à sua procura.");
 };
 if("serviceWorker" in navigator){
-window.addEventListener("load",()=>{
-navigator.serviceWorker.register("./sw.js").catch(()=>{});
-});
+addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
 }
-update();
+resize();requestAnimationFrame(loop);
 </script>
 </body>
 </html>
