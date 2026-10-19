@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#08090d">
+<meta name="description" content="Explore um hotel assustador e sobreviva às entidades.">
+<link rel="manifest" href="./manifest.json">
+<title>Hotel 13</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#08090d;color:#eee;font-family:Arial,sans-serif;text-align:center}
+header{padding:15px;background:#11131b;border-bottom:1px solid #39323b}
+h1{margin:0;color:#d64b55;letter-spacing:4px}
+header p{color:#aaa;font-size:13px}
+#scene{height:48vh;min-height:260px;max-height:430px;position:relative;overflow:hidden;background:radial-gradient(ellipse,#45404a 0%,#17171e 48%,#050609 100%)}
+.wall{position:absolute;inset:0;background:linear-gradient(90deg,#090a0e,#35323a 50%,#090a0e);clip-path:polygon(0 0,100% 0,72% 100%,28% 100%)}
+.floor{position:absolute;inset:48% 0 0;background:repeating-linear-gradient(90deg,transparent 0 39px,#ffffff0b 40px 41px),linear-gradient(#25232a,#08090c);clip-path:polygon(28% 0,72% 0,100% 100%,0 100%)}
+.door{position:absolute;top:17%;bottom:12%;left:37%;width:26%;border:7px solid #171014;background:linear-gradient(90deg,#38252a,#62403b,#291b21);box-shadow:0 0 35px #000,inset 0 0 10px #000}
+.door:after{content:"";position:absolute;right:12%;top:53%;width:9px;height:9px;border-radius:50%;background:#d6a76c}
+#number{position:absolute;top:23%;left:0;right:0;font-size:28px;font-weight:bold;color:#eee;text-shadow:0 0 10px black}
+#entity{display:none;position:absolute;inset:0;align-items:center;justify-content:center;background:#17050ae8;color:#ff263d;font-size:clamp(22px,7vw,40px);font-weight:bold;text-shadow:0 0 18px red;z-index:3}
+#message{min-height:48px;padding:13px 10px;color:#c5c0c7}
+.stats{display:flex;justify-content:center;gap:24px;padding:5px;font-size:14px}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px;max-width:500px;margin:auto}
+button{padding:15px 8px;border:1px solid #55434b;border-radius:8px;background:#211820;color:white;font-size:15px;font-weight:bold}
+button:active{background:#62303a}
+#restart{display:none}
+footer{padding:10px;color:#777;font-size:12px}
+</style>
+</head>
+<body>
+<header>
+<h1>HOTEL 13</h1>
+<p>Você não deveria ter entrado aqui...</p>
+</header>
+<main>
+<div id="scene">
+<div class="wall"></div><div class="floor"></div>
+<div class="door"></div>
+<div id="number">000</div>
+<div id="entity">ELE ESTÁ AQUI!</div>
+</div>
+<div class="stats">
+<span>❤️ Vida: <b id="hp">3</b></span>
+<span>🔦 Lanterna: <b id="light">Ligada</b></span>
+</div>
+<div id="message">O corredor está silencioso. Abra a porta...</div>
+<div class="controls">
+<button id="open">🚪 Abrir porta</button>
+<button id="hide">🗄️ Esconder</button>
+<button id="flash">🔦 Lanterna</button>
+<button id="restart">🔄 Recomeçar</button>
+</div>
+</main>
+<footer>HOTEL 13 • Sobreviva se conseguir.</footer>
+<script>
+let room=0,hp=3,light=true,threat=false,ended=false;
+const $=id=>document.getElementById(id);
+function say(t){$("message").textContent=t}
+function update(){
+$("number").textContent=String(room).padStart(3,"0");
+$("hp").textContent=hp;
+$("light").textContent=light?"Ligada":"Desligada";
+$("entity").style.display=threat?"flex":"none";
+$("flash").textContent=light?"🔦 Desligar lanterna":"🔦 Ligar lanterna";
+$("open").disabled=ended;
+$("hide").disabled=ended;
+$("flash").disabled=ended;
+$("restart").style.display=ended?"block":"none";
+}
+$("open").onclick=()=>{
+if(ended)return;
+if(threat){hp--;threat=false;
+if(hp<=0){hp=0;ended=true;say("Você foi encontrado. Fim de jogo.");}
+else say("Você abriu a porta na hora errada! Perdeu uma vida.");
+}else{
+room++;
+if(room%5===0){
+threat=true;
+say("As luzes falharam... ESCONDA-SE AGORA!");
+}else if(Math.random()<0.28){
+threat=true;
+say("Você ouviu passos correndo! Esconda-se!");
+}else{
+say("Sala "+room+". Você escuta ruídos ao longe...");
+}
+}
+update();
+};
+$("hide").onclick=()=>{
+if(ended)return;
+if(threat){
+threat=false;
+say("Você se escondeu a tempo. Os passos foram embora...");
+}else say("Você se escondeu, mas não ouviu nenhum perigo.");
+update();
+};
+$("flash").onclick=()=>{
+if(ended)return;
+light=!light;
+$("scene").style.filter=light?"brightness(1)":"brightness(.35)";
+say(light?"A lanterna ilumina o corredor.":"Tudo ficou muito escuro...");
+update();
+};
+$("restart").onclick=()=>{
+room=0;hp=3;light=true;threat=false;ended=false;
+$("scene").style.filter="brightness(1)";
+say("Você voltou ao início. Tente sobreviver!");
+update();
+};
+if("serviceWorker" in navigator){
+window.addEventListener("load",()=>{
+navigator.serviceWorker.register("./sw.js").catch(()=>{});
+});
+}
+update();
+</script>
+</body>
+</html>
