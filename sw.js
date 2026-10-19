@@ -1,5 +1,5 @@
 
-const CACHE = "hotel13-v1";
+const CACHE = "hotel13-v2";
 const FILES = [
   "./",
   "./index.html",
